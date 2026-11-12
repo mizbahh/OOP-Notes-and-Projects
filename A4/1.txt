@@ -1,0 +1,17 @@
+15
+John true
+Sally false
+Sarah false
+Ray true
+Juan true
+Mizbah false
+Zahra false
+Zoya true
+Maha true
+Tahoora true
+Beenish false
+Safia true
+Aqsa false
+Yumna true
+Baba false
+Ami true

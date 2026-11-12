@@ -1,0 +1,179 @@
+/* Mizbah Ateeq
+ * Dr. Steinberg
+ * COP3503 Spring 2025
+ * Programming Assignment 5
+ */
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Railroad
+{
+
+	// global variables
+	private int tracks;
+	private String file;
+	private Edge[] edgeList;
+	private Map<String, Integer> nameToIndex = new HashMap<>();
+	private List<String> indexToName = new ArrayList<>();
+
+	// main constructor, reads file
+	public Railroad(int tracks, String file) throws Exception 
+	{
+		this.tracks = tracks;
+		this.file = file;
+		this.edgeList = new Edge[tracks];
+
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		for (int i = 0; i < tracks; i++) 
+		{
+
+			String[] parts = br.readLine().split(" ");
+
+			String start = parts[0]; // starting destination
+			String end = parts[1]; // end destination
+			int cost = Integer.parseInt(parts[2]); // designing track cost
+
+			int startIndex = getIndex(start);
+			int endIndex = getIndex(end);
+
+			edgeList[i] = new Edge(startIndex, endIndex, cost); // store edge
+		}
+		br.close();
+	}
+
+	// build railroad using kruskal alg
+	public String buildRailroad() 
+	{
+		Arrays.sort(edgeList); // sort edges by cost
+		StringBuilder sb = new StringBuilder();
+
+		DisjointSet ds = new DisjointSet(indexToName.size());
+
+		int totalCost = 0;
+		int count = 0;
+
+		for (int i=0; i<edgeList.length; i++) 
+		{
+
+			Edge e = edgeList[i];
+
+			// if adding edge won't form cycle
+			if (ds.find(e.start) != ds.find(e.end)) 
+			{
+				ds.union(e.start, e.end); // connect two sets
+
+				String startName = indexToName.get(e.start);
+				String endName = indexToName.get(e.end);
+
+				// ensure output start comes before end alphabetically  
+				if (startName.compareTo(endName) > 0) 
+				{
+					String temp = startName;
+					startName = endName;
+					endName = temp;
+				}
+
+				// record chosen track and cost
+				sb.append(startName).append("---").append(endName).append("\t").append("$").append(e.cost).append("\n");
+				totalCost += e.cost;
+				count++;
+
+				// stop once n-1 edges
+				if (count == indexToName.size() - 1)
+					break;
+			}
+		}
+
+		// append final cost
+		sb.append("The cost of the railroad is $").append(totalCost).append(".");
+		return sb.toString();
+	}
+
+	// returns index for station name
+	private int getIndex(String name) 
+	{
+		// if name mentioned for first time
+		if (!nameToIndex.containsKey(name)) 
+		{
+			nameToIndex.put(name, indexToName.size());
+			indexToName.add(name);
+		}
+
+		return nameToIndex.get(name);
+	}
+
+
+	private class Edge implements Comparable<Edge> 
+	{
+		int start, end, cost;
+
+		Edge(int start, int end, int cost) 
+		{
+			this.start = start;
+			this.end = end;
+			this.cost = cost;
+		}
+
+		// compare edges by cost
+		public int compareTo(Edge other) 
+		{
+			return this.cost - other.cost;
+		}
+
+	}
+
+
+	// disjoint set class
+	private class DisjointSet 
+	{
+		int[] parent, rank;
+
+		public DisjointSet(int size) 
+		{
+			parent = new int[size];
+			rank = new int[size];
+			for (int i = 0; i < size; i++) 
+				parent[i] = i; // each node starts at own parent
+		}
+
+		// find root w path compression
+		public int find(int x) 
+		{
+			if (parent[x] != x)
+				parent[x] = find(parent[x]);
+
+			return parent[x];
+		}
+
+		// union by rank to keep tree flat
+		public void union(int x, int y) 
+		{
+			// compare x root vs y root
+
+			int xRoot = find(x);
+			int yRoot = find(y);
+
+			if (xRoot == yRoot) 
+				return;
+
+			if (rank[xRoot] < rank[yRoot])
+				parent[xRoot] = yRoot;
+
+			else if (rank[xRoot] > rank[yRoot])
+				parent[yRoot] = xRoot;
+
+			else 
+			{
+				parent[yRoot] = xRoot;
+				rank[xRoot]++;
+			}
+
+		}
+	}
+} 

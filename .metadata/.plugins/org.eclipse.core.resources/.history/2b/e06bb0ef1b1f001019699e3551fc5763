@@ -1,0 +1,89 @@
+import java.io.*;
+import java.util.*;
+
+public class Railroad {
+    private int numTracks;
+    private String filename;
+    private List<Edge> edges;
+    private Map<String, String> parent;
+
+    public Railroad(int numTracks, String filename) {
+        this.numTracks = numTracks;
+        this.filename = filename;
+        this.edges = new ArrayList<>();
+        this.parent = new HashMap<>();
+        loadEdges();
+    }
+
+    private void loadEdges() {
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" ");
+                String u = parts[0];
+                String v = parts[1];
+                int cost = Integer.parseInt(parts[2]);
+                edges.add(new Edge(u, v, cost));
+                parent.put(u, u);
+                parent.put(v, v);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String find(String vertex) {
+        if (parent.get(vertex).equals(vertex)) {
+            return vertex;
+        } else {
+            parent.put(vertex, find(parent.get(vertex)));
+            return parent.get(vertex);
+        }
+    }
+
+    private void union(String u, String v) {
+        String rootU = find(u);
+        String rootV = find(v);
+        if (!rootU.equals(rootV)) {
+            parent.put(rootU, rootV);
+        }
+    }
+
+    public String buildRailroad() {
+        Collections.sort(edges);
+        List<Edge> mst = new ArrayList<>();
+        int totalCost = 0;
+
+        for (Edge edge : edges) {
+            if (find(edge.u).equals(find(edge.v))) {
+                continue;
+            }
+            union(edge.u, edge.v);
+            mst.add(edge);
+            totalCost += edge.cost;
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (Edge edge : mst) {
+            result.append(edge.u).append("---").append(edge.v).append("\t").append("$").append(edge.cost).append("\n");
+        }
+        result.append("The cost of the railroad is $").append(totalCost).append(".");
+
+        return result.toString();
+    }
+
+    private static class Edge implements Comparable<Edge> {
+        String u, v;
+        int cost;
+
+        Edge(String u, String v, int cost) {
+            this.u = u;
+            this.v = v;
+            this.cost = cost;
+        }
+
+        @Override
+        public int compareTo(Edge other) {
+            return Integer.compare(this.cost, other.cost);
+        }
+    }
